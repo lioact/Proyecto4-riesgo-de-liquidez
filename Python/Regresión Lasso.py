@@ -27,70 +27,79 @@ SA2 = pd.merge(cargar_filtrar("Santander"), df_series, on="Fecha", how="left")
 BN2 = pd.merge(cargar_filtrar("Banorte"), df_series, on="Fecha", how="left")
 
 # Función para ajustar y analizar modelo Lasso
-def ajustar_y_analizar_lasso(df, banco, variable_respuesta, variables_predictoras):
-    print(f"\n\nModelo Lasso: {banco} - {variable_respuesta}")
+def ajustar_y_analizar_lasso(df, banco, variables_respuesta, variables_predictoras):
+    print(f"\n\nAnálisis completo para: {banco}")
 
-    cols = ["Fecha", variable_respuesta] + variables_predictoras
-    df_filtrado = df[cols].dropna()
+    df_plot_all = pd.DataFrame({"Fecha": df["Fecha"]})
+    resultados = {}
 
-    if df_filtrado[variable_respuesta].nunique() <= 1:
-        print(f"Variable {variable_respuesta} inválida (constante o nula)")
-        return None
+    plt.figure(figsize=(14, 7))
 
-    X_raw = df_filtrado[variables_predictoras].values
-    y = df_filtrado[variable_respuesta].values
+    for var_resp in variables_respuesta:
+        print(f"\n\n--- Variable: {var_resp} ---")
 
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_raw)
+        cols = ["Fecha", var_resp] + variables_predictoras
+        df_filtrado = df[cols].dropna()
 
-    # ⚠️ Aumentamos el número de iteraciones para evitar problemas de convergencia
-    lasso_cv = LassoCV(cv=5, max_iter=10000, n_alphas=1000).fit(X_scaled, y)
-    y_pred = lasso_cv.predict(X_scaled)
+        if df_filtrado[var_resp].nunique() <= 1:
+            print(f"Variable {var_resp} inválida (constante o nula)")
+            continue
 
-    r2 = lasso_cv.score(X_scaled, y)
-    print(f"\nR²: {round(r2, 4)}")
-    print(f"Lambda óptimo: {round(lasso_cv.alpha_, 6)}")
+        X_raw = df_filtrado[variables_predictoras].values
+        y = df_filtrado[var_resp].values
 
-    coef = pd.Series(lasso_cv.coef_, index=variables_predictoras)
-    print("\nCoeficientes:")
-    print(coef)
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X_raw)
 
-    # Prueba de Spearman
-    rho, pval = spearmanr(y, y_pred)
-    print("\nPrueba de Spearman:")
-    print(f"rho = {rho:.4f}, p-valor = {pval:.4f}")
+        lasso_cv = LassoCV(cv=5, max_iter=10000, n_alphas=1000).fit(X_scaled, y)
+        y_pred = lasso_cv.predict(X_scaled)
 
-    # Interpretación económica
-    print("\nInterpretación económica:")
-    for var in variables_predictoras:
-        beta = coef[var]
-        if beta > 0:
-            sentido = "positiva"
-        elif beta < 0:
-            sentido = "negativa"
-        else:
-            sentido = "nula"
-        print(f"{var}: relación {sentido}")
+        r2 = lasso_cv.score(X_scaled, y)
+        coef = pd.Series(lasso_cv.coef_, index=variables_predictoras)
 
-    # Gráfico
-    df_plot = pd.DataFrame({
-        "Fecha": df_filtrado["Fecha"],
-        "Real": y,
-        "Estimado": y_pred
-    })
+        rho, pval = spearmanr(y, y_pred)
 
-    plt.figure(figsize=(10, 5))
-    sns.lineplot(data=df_plot, x="Fecha", y="Real", label="Real")
-    sns.lineplot(data=df_plot, x="Fecha", y="Estimado", label="Estimado", linestyle="--")
-    plt.title(f"Modelo Lasso - {banco} - {variable_respuesta}")
+        print(f"R²: {round(r2, 4)}")
+        print(f"Lambda óptimo: {round(lasso_cv.alpha_, 6)}")
+        print("Coeficientes:")
+        print(coef)
+
+        print("Prueba de Spearman:")
+        print(f"rho = {rho:.4f}, p-valor = {pval:.4f}")
+
+        print("Interpretación económica:")
+        for var in variables_predictoras:
+            beta = coef[var]
+            sentido = "positiva" if beta > 0 else "negativa" if beta < 0 else "nula"
+            print(f"{var}: relación {sentido}")
+
+        # Guardar para graficar todo junto
+        df_plot_all = df_plot_all.merge(df_filtrado[["Fecha"]].assign(**{
+            f"{var_resp}_Real": y,
+            f"{var_resp}_Estimado": y_pred
+        }), on="Fecha", how="left")
+
+        resultados[var_resp] = {
+            "modelo": lasso_cv,
+            "r2": r2,
+            "coef": coef,
+            "spearman": (rho, pval)
+        }
+
+        # Gráfico combinado
+        sns.lineplot(x=df_filtrado["Fecha"], y=y, label=f"{var_resp} Real")
+        sns.lineplot(x=df_filtrado["Fecha"], y=y_pred, label=f"{var_resp} Estimado", linestyle="--")
+
+    plt.title(f"Modelo Lasso - {banco} (3 variables de captación)")
     plt.xlabel("Fecha")
-    plt.ylabel(variable_respuesta)
+    plt.ylabel("Valor")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
     plt.show()
 
-    return {"modelo": lasso_cv, "r2": r2, "coef": coef, "spearman": (rho, pval)}
+    return resultados
+
 
 # Definir variables
 variables_captacion = ["Depositos Vista", "Depositos Plazo", "Captación tradicional"]
@@ -105,9 +114,33 @@ bancos = {
     "Banorte": BN2
 }
 
-# Ejecutar el análisis Lasso para cada banco y variable
 for banco, df_banco in bancos.items():
-    for var_resp in variables_captacion:
-        if var_resp in df_banco.columns:
-            ajustar_y_analizar_lasso(df_banco, banco, var_resp, variables_macro)
+    ajustar_y_analizar_lasso(df_banco, banco, variables_captacion, variables_macro)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
