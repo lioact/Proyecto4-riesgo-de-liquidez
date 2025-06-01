@@ -24,15 +24,19 @@ SA2 <- left_join(cargar_filtrar("Santander"), df_series, by = "Fecha")
 BN2 <- left_join(cargar_filtrar("Banorte"), df_series, by = "Fecha")
 
 # Función para ajustar y analizar modelo Lasso
-df <- df %>% select(all_of(c("Fecha", variable_respuesta, variables_predictoras))) %>% na.omit()
-
-# Estandarización de predictores
-x_raw <- as.matrix(df[, variables_predictoras])
-x <- scale(x_raw)
-
-# Variable respuesta
-y <- as.matrix(df[[variable_respuesta]])
-
+ajustar_y_analizar_lasso <- function(df, banco, variable_respuesta, variables_predictoras) {
+  cat("\n\nModelo Lasso:", banco, "-", variable_respuesta, "\n")
+  
+  # Filtrado de variables y NA
+  df <- df %>% select(all_of(c("Fecha", variable_respuesta, variables_predictoras))) %>% na.omit()
+  
+  # Estandarización de predictores
+  x_raw <- as.matrix(df[, variables_predictoras])
+  x <- scale(x_raw)
+  
+  # Variable respuesta
+  y <- as.matrix(df[[variable_respuesta]])
+  
   if (is.null(y) || var(y) == 0) {
     cat("Variable", variable_respuesta, "inválida (NULL o constante)\n")
     return(NULL)
@@ -64,7 +68,7 @@ y <- as.matrix(df[[variable_respuesta]])
   cat("\nInterpretación económica:\n")
   for (v in variables_predictoras) {
     beta <- coef_lasso[v, 1]
-    sentido <- ifelse(beta > 0, "↑ positiva", ifelse(beta < 0, "↓ negativa", "– nula"))
+    sentido <- ifelse(beta > 0, " positiva", ifelse(beta < 0, " negativa", " nula"))
     cat(v, ": relación", sentido, "\n")
   }
   
