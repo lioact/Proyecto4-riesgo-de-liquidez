@@ -89,7 +89,7 @@ ajustar_y_graficar <- function(df_banco, banco, variables_captacion, variables_m
   
   g <- ggplot(df_long, aes(x = Fecha, y = Valor, color = Serie, linetype = Tipo)) +
     geom_line(size = 1) +
-    labs(title = paste("Banco:", banco),
+    labs(title = paste("Regresion Lasso --", banco),
          x = "Fecha", y = "Valor", color = "Serie", linetype = "") +
     theme_minimal()
   
