@@ -3,10 +3,7 @@
 library(readxl)
 library(dplyr)
 library(siebanxicor)
-library(tidyr)
-library(httr)
-library(jsonlite)
-library(lubridate)
+library(writexl)
 
 # Carga de datos 
 ruta <- "Proyecto 4 Cuentas de Captación 2024.xlsx"
@@ -40,6 +37,7 @@ setToken("3ee8adc24b480b5f402ac5c93882120368adb7d4d3c4f67895fbe5e8b0470a15")
 "Agregados Monetarios M2 Instrumentos monetarios a plazo en poder de residentes 4/ Captación a plazo En otras instituciones no bancarias Entidades de ahorro y crédito popular 3/"
 "Activos Financieros Internos F1 Instrumentos no monetarios en poder de residentes Fondos de ahorro para la vivienda y el retiro Retiro En Banco de México"
 
+
 #Realizar la consulta de las series
 idSeries <- c("SF283","SF17908","SF29652","SE27803","SP30577","SF286","SF311428","SF311357")
 series <- getSeriesData(idSeries, '2019-12-01','2024-06-01')
@@ -61,6 +59,5 @@ df_series <- df_series %>% select(Date, all_of(idSeries))
 colnames(df_series) <- c("Fecha","TIIE","FIX","Base_Monetaria","Remesas_Familiares","INPC","Costo_Captacion","Agregados_Monetarios","Activos_Financieros")
 
 #Exportar los datos a excel
-library(writexl)
 write_xlsx(df_series, "df_series.xlsx")
 write_xlsx(df_series, "C:/Users/fer10/Documents/Administración integral de riesgos/Proyecto4-riesgo-de-liquidez/Datos/df_series.xlsx")
