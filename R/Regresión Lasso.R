@@ -93,7 +93,7 @@ ajustar_y_analizar_lasso_completo <- function(df, banco, variables_respuesta, va
     resultados[[var_resp]] <- list(modelo = modelo, r2 = r2, coef = coef_lasso, prueba = prueba_spearman)
   }
   
-  # 📈 Gráfico combinado
+  # Gráfico combinado
   df_long <- df_plot_all %>%
     pivot_longer(-Fecha, names_to = "Serie", values_to = "Valor")
   
