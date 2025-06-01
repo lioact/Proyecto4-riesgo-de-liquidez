@@ -8,16 +8,15 @@ library(dplyr)
 library(glmnet)
 library(ggplot2)
 
-# Variables macroeconomicas
-ruta <- "~/Administración integral de riesgos/Proyecto4-riesgo-de-liquidez/Datos/df_series.xlsx"
-datos <- read_excel(ruta, sheet = "Datos")
+# Variables macroeconómicas
+df_series <- read_excel("Datos/df_series.xlsx", sheet = "Datos")
 
 # Datos bancos
-rutab <- "~/Administración integral de riesgos/Proyecto4-riesgo-de-liquidez/Datos/Proyecto 4 Cuentas de Captación 2024.xlsx"
+Proyecto_4_Cuentas_de_Captación_2024 <- "Datos/Proyecto 4 Cuentas de Captación 2024.xlsx"
 
 # Función para cargar y filtrar por fechas
 cargar_filtrar <- function(sheet_name) {
-  read_excel(rutab, sheet = sheet_name) %>%
+  read_excel(Proyecto_4_Cuentas_de_Captación_2024, sheet = sheet_name) %>%
     mutate(Fecha = as.Date(Fecha)) %>%
     filter(Fecha >= as.Date("2019-12-01") & Fecha <= as.Date("2024-06-01"))
 }
@@ -30,11 +29,11 @@ SA <- cargar_filtrar("Santander")
 BN <- cargar_filtrar("Banorte")
 
 # Unimos las variables macro con las bancarias por Fecha
-TBM2 <- left_join(TBM, datos, by = "Fecha")
-BX2 <- left_join(BX, datos, by = "Fecha")
-BBVA2 <- left_join(BBVA, datos, by = "Fecha")
-SA2 <- left_join(SA, datos, by = "Fecha")
-BN2 <- left_join(BN, datos, by = "Fecha")
+TBM2 <- left_join(TBM, df_series, by = "Fecha")
+BX2 <- left_join(BX, df_series, by = "Fecha")
+BBVA2 <- left_join(BBVA, df_series, by = "Fecha")
+SA2 <- left_join(SA, df_series, by = "Fecha")
+BN2 <- left_join(BN, df_series, by = "Fecha")
 
 ajustar_y_analizar_ridge <- function(df, banco, variable_respuesta, variables_predictoras) {
   cat("\n\n Modelo Ridge:", banco, "-", variable_respuesta, "\n")
@@ -89,13 +88,10 @@ ajustar_y_analizar_ridge <- function(df, banco, variable_respuesta, variables_pr
          y = variable_respuesta, x = "Fecha", color = "Serie") +
     theme_minimal()
   
-  print(g)  # <- Esto fuerza la impresión del gráfico
+  print(g)
   
-  
-  # Retorno opcional por si lo necesitas guardar
   return(list(modelo = modelo, r2 = r2, coef = coef_ridge, prueba = prueba_spearman))
 }
-
 
 bancos <- list(TBM = TBM2, Banamex = BX2, BBVA = BBVA2, Santander = SA2, Banorte = BN2)
 
@@ -112,4 +108,3 @@ for (banco in names(bancos)) {
     }
   }
 }
-
