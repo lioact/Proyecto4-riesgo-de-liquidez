@@ -20,15 +20,15 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from google.colab import drive
-drive.mount('/content/drive')
 
 # Cargar variables macroeconómicos
-ruta_macro = '/content/drive/MyDrive/Colab Notebooks/Regresión Ridge/df_series.xlsx'
-datos = pd.read_excel(ruta_macro, sheet_name="Datos")
 
-# Cargar datos bancarios
-ruta_bancos = '/content/drive/MyDrive/Colab Notebooks/Regresión Ridge/Proyecto 4 Cuentas de Captación 2024.xlsx'
+# Ruta relativa desde el directorio del script
+ruta_macro = 'Datos/df_series.xlsx'
+ruta_bancos = 'Datos/Proyecto 4 Cuentas de Captación 2024.xlsx'
+
+# Leer archivo
+datos = pd.read_excel(ruta_macro, sheet_name="Datos")
 def cargar_filtrar(sheet_name):
     df = pd.read_excel(ruta_bancos, sheet_name=sheet_name)
     df['Fecha'] = pd.to_datetime(df['Fecha'])
