@@ -8,6 +8,8 @@ library(dplyr)
 library(glmnet)
 library(ggplot2)
 library(tidyr)
+library(tidyselect)
+
 
 # Cargar datos
 df_series <- read_excel("Datos/df_series.xlsx", sheet = "Datos")
@@ -49,7 +51,8 @@ variables_captacion <- c("Captación tradicional", "Depositos Plazo", "Depositos
 
 # Función del modelo Elastic Net
 ajustar_y_analizar_elastic_net <- function(df, banco, variable_respuesta, variables_predictoras, alpha = 0.5) {
-  df <- df %>% select(all_of(c("Fecha", variable_respuesta, variables_predictoras))) %>% na.omit()
+  vars <- c("Fecha", variable_respuesta, variables_predictoras)
+  df <- dplyr::select(df, all_of(vars)) %>% na.omit()
   x <- scale(as.matrix(df[, variables_predictoras]))
   y <- as.matrix(df[[variable_respuesta]])
   
@@ -119,7 +122,7 @@ for (banco in names(resultados_banco)) {
   df_plot <- resultados_banco[[banco]]
   g <- ggplot(df_plot, aes(x = Fecha, y = Valor, color = Variable, linetype = Tipo)) +
     geom_line(size = 1) +
-    labs(title = paste("Modelo Elastic Net -", banco, "(3 variables de captación)"),
+    labs(title = paste("Modelo Elastic Net -", banco),
          y = "Valor", x = "Fecha", color = "Variable", linetype = "Tipo") +
     theme_minimal()
   print(g)
