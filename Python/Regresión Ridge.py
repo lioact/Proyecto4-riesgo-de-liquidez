@@ -117,3 +117,59 @@ for banco, df_banco in bancos.items():
         g.fig.suptitle(f"Modelo Ridge - {banco}", fontsize=16)
         g.fig.tight_layout(rect=[0, 0, 1, 0.96])
         plt.show()
+
+
+
+def ajustar_y_analizar_ridge(df, banco, variable_respuesta, variables_predictoras):
+    columnas = ["Fecha", variable_respuesta] + variables_predictoras
+    df = df[columnas].dropna()
+
+    X = df[variables_predictoras].values
+    y = df[variable_respuesta].values
+
+    if y is None or np.var(y) == 0:
+        print(f"Variable {variable_respuesta} inválida (NULL o constante)")
+        return None
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    modelo = RidgeCV(alphas=np.logspace(-6, 6, 100), store_cv_values=True)
+    modelo.fit(X_scaled, y)
+    y_hat = modelo.predict(X_scaled)
+
+    r2 = r2_score(y, y_hat)
+    rho, p_valor = spearmanr(y, y_hat)
+    coef_ridge = dict(zip(variables_predictoras, modelo.coef_))
+
+    return {
+        "modelo": modelo,
+        "r2": r2,
+        "alpha": modelo.alpha_,
+        "coeficientes": coef_ridge,
+        "spearman": {"rho": rho, "p_valor": p_valor},
+        "banco": banco,
+        "variable": variable_respuesta
+    }
+
+todos_los_modelos = []
+
+for banco, df_banco in bancos.items():
+    for var_resp in variables_captacion:
+        if var_resp in df_banco.columns:
+            resultado = ajustar_y_analizar_ridge(df_banco, banco, var_resp, variables_macro)
+            if resultado is not None:
+                todos_los_modelos.append(resultado)
+
+for res in todos_los_modelos:
+    print(f"\n Banco: {res['banco']} | Variable: {res['variable']}")
+    print(f"R²: {res['r2']:.4f}")
+    print(f"Lambda óptimo (alpha): {res['alpha']:.6f}")
+    
+    print("Coeficientes:")
+    for var, coef in res['coeficientes'].items():
+        signo = "positiva ↑" if coef > 0 else "negativa ↓" if coef < 0 else "nula –"
+        print(f"  - {var}: {coef:.4f} ({signo})")
+    
+    print(f" Spearman rho = {res['spearman']['rho']:.4f}, p-valor = {res['spearman']['p_valor']:.4g}")
+
